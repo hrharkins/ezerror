@@ -11,25 +11,32 @@ class EZException(Exception):
     EZZeroDivisionError: division by zero
     '''
     
-    format = '{my.info}' 
+    format = '{the.info}' 
     defargs = ('info',)
     info = None
     
-    def __init__(self, *_, info=None, **_kw):
+    def __init__(self, *_, **_kw):
+        info = _kw.pop('info', None)
         self.info = _ if info is None else info
         for name, value in zip(self.defargs, _):
             setattr(self, name, value)
         self.__dict__.update(_kw)
         
-    def __str__(self):
-        format = self.format
+    def __getitem__(self, fmt_attr):
+        format = getattr(self, fmt_attr, None)
+        if format is None:
+            raise EZFormatNotFound('{me} cannot be formatted as {the.fmt}', 
+                                   fmt=fmt_attr)
         while True:
-            replace = format.format(my=self)
+            replace = format.format(the=self)
             if replace == format:
                 break
             else:
                 format = replace
         return replace
+        
+    def __str__(self):
+        return self['format']
         
     def __repr__(self):
         return '%s: %s' % (type(self).__name__, self)
@@ -59,4 +66,3 @@ class EZException(Exception):
 
 EZTypeError = EZException.registerPyType(TypeError)
 EZZeroDivisionError = EZException.registerPyType(ZeroDivisionError)
-
